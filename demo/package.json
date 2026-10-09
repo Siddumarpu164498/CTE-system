@@ -1,0 +1,18 @@
+{
+  "name": "clinical-trial-eligibility-demo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Automated, narrated walkthrough of the Clinical Trial Eligibility app. Records a video and screenshots.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "demo": "node record-demo.mjs",
+    "demo:watch": "node record-demo.mjs --headed",
+    "install-ffmpeg": "playwright-core install ffmpeg"
+  },
+  "dependencies": {
+    "playwright-core": "1.62.1"
+  }
+}

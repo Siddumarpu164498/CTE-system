@@ -4,9 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Clinical trial eligibility decision support. Supports, and does not replace, qualified clinical review." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Trial Eligibility Support</title>
+    <script>
+      // Apply the saved theme before first paint so there is no light/dark flash.
+      (function () {
+        var pref = "system";
+        try {
+          pref = localStorage.getItem("cte.theme") || "system";
+        } catch (e) {}
+        var dark = pref === "dark" || (pref === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      })();
+    </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

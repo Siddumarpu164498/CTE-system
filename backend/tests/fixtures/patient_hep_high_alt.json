@@ -1,0 +1,49 @@
+{
+  "label": "Synthetic patient F - liver study, ALT 185 and bilirubin 52 umol/L",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {
+      "age": 58,
+      "sex": "male"
+    },
+    "labs": [
+      {
+        "name": "Platelet count",
+        "value": 140,
+        "unit": "x10^9/L",
+        "observed_at": "2026-09-22"
+      },
+      {
+        "name": "Haemoglobin",
+        "value": 121,
+        "unit": "g/L",
+        "observed_at": "2026-09-22"
+      },
+      {
+        "name": "Alanine aminotransferase",
+        "value": 185,
+        "unit": "U/L",
+        "observed_at": "2026-09-22"
+      },
+      {
+        "name": "Total bilirubin",
+        "value": 52,
+        "unit": "µmol/L",
+        "observed_at": "2026-09-22"
+      }
+    ],
+    "diagnoses": [
+      {
+        "name": "Metabolic dysfunction-associated steatotic liver disease",
+        "documented_at": "2022-11-03"
+      }
+    ],
+    "medications": [],
+    "history": [
+      {
+        "condition": "Decompensated cirrhosis",
+        "present": false
+      }
+    ]
+  }
+}

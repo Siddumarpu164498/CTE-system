@@ -12,7 +12,12 @@ patient profile, evaluates inclusion and exclusion criteria with six specialized
 |---|---|
 | Live API | https://clinical-trial-eligibility-api.onrender.com/docs (Render free plan; first request after idle takes ~1 min) |
 | Live UI | https://clinical-trial-eligibility-app.onrender.com (Render static site) |
-| Demo login (after seeding) | `demo@example.org` / `demo-password-123` |
+| Demo login (after seeding) | `demo@example.org` / `demo-password-123` (or click **Use the demo account**) |
+| User guide | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) |
+| Demo data | [`docs/DEMO_DATA.md`](docs/DEMO_DATA.md): 4 synthetic protocols, 10 synthetic patients, 9 reference assessments |
+| Demo video automation | [`demo/README.md`](demo/README.md): records a narrated walkthrough (MP4 + screenshots) |
+
+![Results page](docs/images/07-results-light.png)
 
 ---
 
@@ -26,6 +31,7 @@ patient profile, evaluates inclusion and exclusion criteria with six specialized
 6. **Agent E, Contradiction**: groups criteria by clinical domain (renal, hepatic, cardiac, …) and raises a Silent Exclusion Trigger when the patient passes some inclusion criteria but a related rule in that domain fails or is unresolved. It also records conflicting rules, inconsistent values and missing data.
 7. **Agent F, Reviewer**: drops or downgrades any finding without evidence, then applies the conservative decision table.
 8. **Results dashboard**: overall status, criteria tables, trigger cards, missing data, conflicts, and an evidence viewer that shows the page text with the excerpt highlighted.
+9. **Interface**: React + Tailwind with the Inter typeface (self-hosted), Light / Dark / System themes with no flash on load, animated stats and agent progress, toasts, outcome filters and search, a sticky results navigator, and phone-width layouts. Statuses always carry text labels, not colour alone.
 
 ### Decision rules (enforced in `app/agents/reviewer.py`)
 

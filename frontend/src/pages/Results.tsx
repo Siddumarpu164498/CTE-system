@@ -2,6 +2,8 @@ import { useCallback, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getRun } from "../api/client";
 import { AuditTrail } from "../components/AuditTrail";
+import { CheckCircleIcon, QuestionIcon, XOctagonIcon } from "../components/Icons";
+import { useToast } from "../components/Toast";
 import { CriteriaTable } from "../components/CriteriaTable";
 import { EvidenceLinks } from "../components/EvidenceLinks";
 import { EvidencePanel, type EvidenceTarget } from "../components/EvidencePanel";
@@ -11,10 +13,68 @@ import { EmptyState, ErrorState, LoadingState } from "../components/States";
 import { OverallStatusBadge, StatusBadge } from "../components/StatusBadge";
 import { formatDateTime, formatValue, humanize } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
+import type { CriterionEvaluation, EligibilityResult } from "../types";
+
+interface Verdict {
+  ring: string;
+  glow: string;
+  icon: string;
+  Icon: typeof CheckCircleIcon;
+  headline: string;
+}
+
+const MORE_INFO_VERDICT: Verdict = { ring: "border-amber-300", glow: "from-amber-50", icon: "bg-amber-100 text-amber-700", Icon: QuestionIcon, headline: "More information is required" };
+
+const VERDICT: Record<string, Verdict> = {
+  ELIGIBLE: { ring: "border-emerald-300", glow: "from-emerald-50", icon: "bg-emerald-100 text-emerald-700", Icon: CheckCircleIcon, headline: "Patient appears eligible" },
+  NOT_ELIGIBLE: { ring: "border-red-300", glow: "from-red-50", icon: "bg-red-100 text-red-700", Icon: XOctagonIcon, headline: "Patient does not appear eligible" },
+  MORE_INFORMATION_REQUIRED: MORE_INFO_VERDICT,
+};
+
+function countBy(evals: CriterionEvaluation[], status: string): number {
+  return evals.filter((e) => e.status === status).length;
+}
+
+function Metric({ label, value, total, tone }: { label: string; value: number; total?: number; tone: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-surface/70 px-3 py-2">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`text-lg font-semibold tabular-nums ${tone}`}>
+        {value}
+        {total !== undefined ? <span className="text-sm font-normal text-slate-400"> / {total}</span> : null}
+      </p>
+    </div>
+  );
+}
+
+function SectionNav({ r }: { r: EligibilityResult }) {
+  const links = [
+    { href: "#set-h", label: "Triggers", n: r.silent_exclusion_triggers.length },
+    { href: "#inclusion-criteria", label: "Inclusion", n: r.inclusion_results.length },
+    { href: "#exclusion-criteria", label: "Exclusion", n: r.exclusion_results.length },
+    { href: "#missing-h", label: "Missing info", n: r.missing_information.length },
+    { href: "#decisive-h", label: "Evidence", n: r.decisive_evidence.length },
+    { href: "#audit", label: "Audit trail" },
+  ];
+  return (
+    <nav aria-label="Result sections" className="sticky top-16 z-20 -mx-4 border-b border-slate-200/70 bg-canvas/85 px-4 py-2 backdrop-blur print:hidden sm:mx-0 sm:rounded-xl sm:border">
+      <ul className="flex gap-1 overflow-x-auto">
+        {links.map((l) => (
+          <li key={l.href} className="shrink-0">
+            <a href={l.href} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900">
+              {l.label}
+              {l.n !== undefined ? <span className="rounded-full bg-slate-100 px-1.5 text-[10px] tabular-nums text-slate-500">{l.n}</span> : null}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
 
 function Panel({ id, title, count, children }: { id: string; title: string; count?: number; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="card p-4 sm:p-6">
+    <section aria-labelledby={id} className="card scroll-mt-32 p-4 sm:p-6">
       <h2 id={id} className="section-title mb-3">
         {title}
         {count !== undefined ? <span className="text-sm font-normal text-slate-600"> ({count})</span> : null}
@@ -27,6 +87,7 @@ function Panel({ id, title, count, children }: { id: string; title: string; coun
 export default function Results() {
   const { runId = "" } = useParams<{ runId: string }>();
   const run = useAsync(() => getRun(runId), [runId]);
+  const { notify } = useToast();
   const [evidence, setEvidence] = useState<EvidenceTarget | null>(null);
   const openEvidence = useCallback((t: EvidenceTarget) => setEvidence(t), []);
   const closeEvidence = useCallback(() => setEvidence(null), []);
@@ -42,7 +103,7 @@ export default function Results() {
     const inProgress = d.status === "queued" || d.status === "running";
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Assessment results</h1>
+        <h1 className="page-title">Assessment results</h1>
         <div className="card space-y-3 p-4 sm:p-6">
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={d.status} size="lg" />
@@ -74,36 +135,71 @@ export default function Results() {
   }
 
   const notice = r.human_review_notice || d.human_review_notice;
+  const verdict = VERDICT[r.overall_status] ?? MORE_INFO_VERDICT;
 
   return (
     <div className="space-y-6">
       <ReviewNotice notice={notice} />
 
-      <section aria-labelledby="summary-h" className="card p-4 sm:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0 space-y-1">
-            <h1 id="summary-h" className="text-2xl font-semibold">Eligibility assessment</h1>
-            <p className="break-words text-slate-800">
-              <span className="font-semibold">Trial:</span> {d.trial_title}
-            </p>
-            <p className="break-words text-slate-800">
-              <span className="font-semibold">Patient:</span> {d.patient_label}{" "}
-              <span className="text-slate-600">(profile version {d.patient_profile_version})</span>
-            </p>
-            <p className="text-sm text-slate-600">
-              Protocol version <span className="font-mono">{r.protocol_version || d.protocol_version}</span> · Analyzed {formatDateTime(r.analyzed_at)}
-            </p>
+      <section
+        aria-labelledby="summary-h"
+        className={`relative overflow-hidden rounded-2xl border-2 bg-gradient-to-br ${verdict.ring} ${verdict.glow} via-surface to-surface p-5 shadow-card sm:p-7`}
+      >
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div className="flex min-w-0 gap-4">
+            <span className={`hidden h-14 w-14 shrink-0 animate-scale-in items-center justify-center rounded-2xl text-3xl sm:flex ${verdict.icon}`}>
+              <verdict.Icon />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <p className="eyebrow">Eligibility assessment</p>
+              <h1 id="summary-h" className="page-title">{verdict.headline}</h1>
+              <p className="break-words text-sm text-slate-700">
+                <span className="font-semibold">Trial:</span> {d.trial_title}
+              </p>
+              <p className="break-words text-sm text-slate-700">
+                <span className="font-semibold">Patient:</span> {d.patient_label}{" "}
+                <span className="text-slate-500">(profile version {d.patient_profile_version})</span>
+              </p>
+              <p className="text-xs text-slate-500">
+                Protocol version <span className="font-mono">{r.protocol_version || d.protocol_version}</span> · Analyzed {formatDateTime(r.analyzed_at)}
+              </p>
+            </div>
           </div>
-          <div className="shrink-0" aria-label="Overall recommendation">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">Overall recommendation</p>
+          <div className="flex shrink-0 flex-col items-start gap-3 md:items-end" aria-label="Overall recommendation">
+            <p className="eyebrow">Overall recommendation</p>
             <OverallStatusBadge status={r.overall_status} />
+            <div className="flex gap-2 print:hidden">
+              <button
+                type="button"
+                className="btn-secondary px-3 py-1.5 text-xs"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(window.location.href).then(
+                    () => notify("success", "Link copied", "Share it with a colleague who has access."),
+                    () => notify("error", "Could not copy link"),
+                  );
+                }}
+              >
+                Copy link
+              </button>
+              <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => window.print()}>
+                Print
+              </button>
+            </div>
           </div>
         </div>
-        <div className="mt-4 rounded-md bg-slate-50 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Explanation</h2>
-          <p className="mt-1 whitespace-pre-line text-slate-900">{r.final_explanation}</p>
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Metric label="Inclusion met" value={countBy(r.inclusion_results, "SATISFIED")} total={r.inclusion_results.length} tone="text-emerald-700" />
+          <Metric label="Exclusions triggered" value={countBy(r.exclusion_results, "TRIGGERED")} total={r.exclusion_results.length} tone="text-red-700" />
+          <Metric label="Unknown" value={countBy(r.inclusion_results, "UNKNOWN") + countBy(r.exclusion_results, "UNKNOWN")} tone="text-amber-700" />
+          <Metric label="Silent triggers" value={r.silent_exclusion_triggers.length} tone="text-amber-700" />
+        </div>
+        <div className="mt-4 rounded-xl border border-slate-200 bg-surface/80 p-4">
+          <h2 className="eyebrow">Explanation</h2>
+          <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-900">{r.final_explanation}</p>
         </div>
       </section>
+
+      <SectionNav r={r} />
 
       <Panel id="set-h" title="Silent exclusion triggers" count={r.silent_exclusion_triggers.length}>
         {r.silent_exclusion_triggers.length === 0 ? (
@@ -198,7 +294,9 @@ export default function Results() {
         )}
       </Panel>
 
-      <AuditTrail runId={d.run_id} />
+      <div id="audit" className="scroll-mt-32">
+        <AuditTrail runId={d.run_id} />
+      </div>
 
       <ReviewNotice notice={notice} />
 

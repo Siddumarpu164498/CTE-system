@@ -23,11 +23,14 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def _ensure_pdfs() -> None:
-    from scripts.make_synthetic_protocol import FIXTURES as OUT, make_protocol
+    from scripts.make_synthetic_protocol import DEMO_PROTOCOLS, FIXTURES as OUT, make_demo_protocol, make_protocol
 
     for name, defined in (("protocol_renal.pdf", False), ("protocol_renal_defined.pdf", True)):
         if not (OUT / name).exists():
             make_protocol(OUT / name, defined)
+    for name, spec in DEMO_PROTOCOLS.items():
+        if not (OUT / name).exists():
+            make_demo_protocol(OUT / name, spec)
 
 
 _ensure_pdfs()

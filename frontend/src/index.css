@@ -1,32 +1,191 @@
+@import "@fontsource-variable/inter";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Color tokens (space-separated RGB so Tailwind opacity modifiers work).
+   Light values follow the Tailwind palette; dark values invert each scale's tints so that
+   e.g. `bg-red-50 text-red-900` stays a readable "soft red" pair in both themes. */
 @layer base {
+  :root {
+    color-scheme: light;
+    --canvas: 246 248 251;
+    --surface: 255 255 255;
+    --shadow: 15 23 42;
+
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+
+    --red-50: 254 242 242;
+    --red-100: 254 226 226;
+    --red-200: 254 202 202;
+    --red-300: 252 165 165;
+    --red-400: 248 113 113;
+    --red-500: 239 68 68;
+    --red-600: 220 38 38;
+    --red-700: 185 28 28;
+    --red-800: 153 27 27;
+    --red-900: 127 29 29;
+    --red-950: 69 10 10;
+
+    --amber-50: 255 251 235;
+    --amber-100: 254 243 199;
+    --amber-200: 253 230 138;
+    --amber-300: 252 211 77;
+    --amber-400: 251 191 36;
+    --amber-500: 245 158 11;
+    --amber-600: 217 119 6;
+    --amber-700: 180 83 9;
+    --amber-800: 146 64 14;
+    --amber-900: 120 53 15;
+    --amber-950: 69 26 3;
+
+    --emerald-50: 236 253 245;
+    --emerald-100: 209 250 229;
+    --emerald-200: 167 243 208;
+    --emerald-300: 110 231 183;
+    --emerald-400: 52 211 153;
+    --emerald-500: 16 185 129;
+    --emerald-600: 5 150 105;
+    --emerald-700: 4 120 87;
+    --emerald-800: 6 95 70;
+    --emerald-900: 6 78 59;
+    --emerald-950: 2 44 34;
+
+    --accent-50: 238 243 255;
+    --accent-100: 220 230 254;
+    --accent-200: 192 208 253;
+    --accent-300: 150 175 250;
+    --accent-400: 106 137 244;
+    --accent-500: 76 106 235;
+    --accent-600: 55 84 214;
+    --accent-700: 44 66 176;
+    --accent-800: 37 55 140;
+    --accent-900: 31 46 110;
+    --accent-950: 20 29 66;
+  }
+
+  :root.dark {
+    color-scheme: dark;
+    --canvas: 8 12 22;
+    --surface: 16 22 36;
+    --shadow: 0 0 0;
+
+    --slate-50: 22 30 47;
+    --slate-100: 30 40 60;
+    --slate-200: 42 54 77;
+    --slate-300: 58 72 98;
+    --slate-400: 100 116 142;
+    --slate-500: 138 152 174;
+    --slate-600: 162 175 195;
+    --slate-700: 192 202 217;
+    --slate-800: 216 223 233;
+    --slate-900: 236 240 246;
+    --slate-950: 248 250 252;
+
+    --red-50: 46 18 24;
+    --red-100: 64 22 29;
+    --red-200: 90 29 35;
+    --red-300: 128 40 45;
+    --red-400: 185 60 62;
+    --red-500: 239 68 68;
+    --red-600: 248 96 96;
+    --red-700: 252 132 132;
+    --red-800: 254 167 167;
+    --red-900: 254 204 204;
+    --red-950: 254 228 228;
+
+    --amber-50: 42 31 12;
+    --amber-100: 58 42 12;
+    --amber-200: 86 61 14;
+    --amber-300: 122 84 16;
+    --amber-400: 166 113 20;
+    --amber-500: 245 158 11;
+    --amber-600: 251 178 40;
+    --amber-700: 252 201 84;
+    --amber-800: 253 217 124;
+    --amber-900: 254 231 163;
+    --amber-950: 254 243 199;
+
+    --emerald-50: 11 38 33;
+    --emerald-100: 13 52 43;
+    --emerald-200: 15 74 58;
+    --emerald-300: 20 104 80;
+    --emerald-400: 32 150 111;
+    --emerald-500: 16 185 129;
+    --emerald-600: 52 211 153;
+    --emerald-700: 110 231 183;
+    --emerald-800: 167 243 208;
+    --emerald-900: 200 248 225;
+    --emerald-950: 222 252 237;
+
+    --accent-50: 23 33 66;
+    --accent-100: 29 43 88;
+    --accent-200: 42 62 126;
+    --accent-300: 62 90 170;
+    --accent-400: 100 132 238;
+    --accent-500: 104 136 245;
+    --accent-600: 66 98 226;
+    --accent-700: 155 180 252;
+    --accent-800: 192 208 253;
+    --accent-900: 220 230 254;
+    --accent-950: 238 243 255;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
+    font-feature-settings: "cv11", "ss01";
   }
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-canvas text-slate-900 antialiased;
     overflow-x: hidden;
   }
+  /* Smooth theme switches without animating every hover state. */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease, fill 0.2s ease !important;
+  }
   :focus-visible {
-    @apply outline-none ring-2 ring-accent-600 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-accent-500 ring-offset-2 ring-offset-surface;
   }
   mark {
     @apply rounded-sm bg-amber-200 px-0.5 text-slate-900;
+  }
+  ::selection {
+    @apply bg-accent-200 text-slate-900;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-accent-600 text-white hover:bg-accent-700;
+    @apply btn bg-accent-600 text-white shadow-sm shadow-accent-600/30 hover:bg-accent-500 hover:shadow-md hover:shadow-accent-600/30;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-800 hover:bg-slate-100;
+    @apply btn border border-slate-200 bg-surface text-slate-800 shadow-sm hover:border-slate-300 hover:bg-slate-50;
   }
   .btn-ghost {
     @apply btn text-slate-700 hover:bg-slate-100;
@@ -35,7 +194,7 @@
     @apply btn px-2 py-1 text-red-700 hover:bg-red-50;
   }
   .input {
-    @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500 focus-visible:border-accent-600;
+    @apply block w-full rounded-lg border border-slate-200 bg-surface px-3 py-2 text-sm text-slate-900 shadow-sm transition-shadow placeholder:text-slate-500 hover:border-slate-300 focus-visible:border-accent-500 focus-visible:shadow-glow focus-visible:ring-0 focus-visible:ring-offset-0;
   }
   .input-invalid {
     @apply border-amber-500 bg-amber-50/40;
@@ -44,12 +203,26 @@
     @apply mb-1 block text-sm font-medium text-slate-700;
   }
   .card {
-    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200 bg-surface shadow-card;
+  }
+  .card-interactive {
+    @apply card transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lift;
   }
   .section-title {
-    @apply text-lg font-semibold text-slate-900;
+    @apply text-lg font-semibold tracking-tight text-slate-900;
   }
   .link {
     @apply font-medium text-accent-700 underline-offset-2 hover:underline;
+  }
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-500;
+  }
+  .skeleton {
+    @apply animate-shimmer rounded-md bg-slate-100;
+    background-image: linear-gradient(90deg, transparent, rgb(var(--slate-200) / 0.7), transparent);
+    background-size: 200% 100%;
   }
 }

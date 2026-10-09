@@ -1,0 +1,58 @@
+{
+  "label": "Synthetic patient G - liver study, stale platelet count",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {
+      "age": 63,
+      "sex": "female"
+    },
+    "labs": [
+      {
+        "name": "Platelet count",
+        "value": 180,
+        "unit": "x10^9/L",
+        "observed_at": "2026-03-02"
+      },
+      {
+        "name": "Hemoglobin",
+        "value": 12.4,
+        "unit": "g/dL",
+        "observed_at": "2026-09-10"
+      },
+      {
+        "name": "ALT",
+        "value": 62,
+        "unit": "U/L",
+        "observed_at": "2026-09-10"
+      },
+      {
+        "name": "Total bilirubin",
+        "value": 1.1,
+        "unit": "mg/dL",
+        "observed_at": "2026-09-10"
+      }
+    ],
+    "diagnoses": [
+      {
+        "name": "Metabolic dysfunction-associated steatotic liver disease",
+        "documented_at": "2021-07-20"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Metformin",
+        "start_date": "2020-01-15"
+      }
+    ],
+    "history": [
+      {
+        "condition": "Pregnancy",
+        "present": false
+      },
+      {
+        "condition": "Breastfeeding",
+        "present": false
+      }
+    ]
+  }
+}

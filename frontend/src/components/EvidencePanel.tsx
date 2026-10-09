@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useRef } from "react";
 import { getPage } from "../api/client";
 import { findExcerpt } from "../lib/highlight";
@@ -71,15 +72,16 @@ export function EvidencePanel({
     if (match && markRef.current) markRef.current.scrollIntoView({ block: "center" });
   }, [match?.start, match?.end, page.data]);
 
-  return (
+  // Portal to <body> so parent layout (spacing utilities, transforms) never offsets the overlay.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-slate-900/40" aria-hidden="true" onClick={onClose} />
+      <div className="absolute inset-0 animate-fade-in bg-black/45 backdrop-blur-[2px]" aria-hidden="true" onClick={onClose} />
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="evidence-title"
-        className="relative flex h-full w-full flex-col bg-white shadow-xl md:max-w-xl lg:max-w-2xl"
+        className="relative flex h-full w-full animate-slide-in-right flex-col border-l border-slate-200 bg-surface shadow-2xl md:max-w-xl lg:max-w-2xl"
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
           <div className="min-w-0">
@@ -135,6 +137,7 @@ export function EvidencePanel({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,15 +1,21 @@
+// Timestamps without an offset come from SQLite-backed deployments and are UTC.
+const NAIVE_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
-  const d = new Date(value);
+  const d = new Date(NAIVE_DATETIME.test(value) ? `${value}Z` : value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
-  const d = new Date(value);
+  const dateOnly = DATE_ONLY.test(value);
+  const d = new Date(NAIVE_DATETIME.test(value) ? `${value}Z` : value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString(undefined, { dateStyle: "medium" });
+  // A calendar date has no time zone: format it as written instead of shifting it to local time.
+  return d.toLocaleDateString(undefined, { dateStyle: "medium", ...(dateOnly ? { timeZone: "UTC" } : {}) });
 }
 
 export function formatPercent(value: number | null | undefined): string {

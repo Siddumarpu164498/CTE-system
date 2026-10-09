@@ -5,6 +5,7 @@ import { CriteriaPreview } from "../components/CriteriaPreview";
 import { FileIcon, UploadIcon } from "../components/Icons";
 import { ReviewNotice } from "../components/ReviewNotice";
 import { StatusBadge } from "../components/StatusBadge";
+import { useToast } from "../components/Toast";
 import type { TrialDetail } from "../types";
 import { humanize } from "../lib/format";
 
@@ -32,6 +33,7 @@ function validateFile(file: File): string | null {
 }
 
 export default function TrialUpload() {
+  const { notify } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -75,6 +77,7 @@ export default function TrialUpload() {
         if (ev.total) setProgress(Math.round((ev.loaded / ev.total) * 100));
       });
       setTrial(out);
+      notify("success", "Protocol uploaded", `${out.criteria.length} criteria extracted from ${out.title}.`);
       setFile(null);
       setTitle("");
     } catch (err) {
@@ -91,7 +94,7 @@ export default function TrialUpload() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Upload trial protocol</h1>
+        <h1 className="page-title">Upload trial protocol</h1>
         <p className="text-sm text-slate-600">
           Upload a protocol PDF (max {MAX_MB} MB). Inclusion and exclusion criteria are extracted for review.
         </p>
@@ -105,11 +108,13 @@ export default function TrialUpload() {
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
-          className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-4 py-10 text-center transition-colors ${
-            dragOver ? "border-accent-600 bg-accent-50" : "border-slate-300 bg-slate-50"
+          className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-4 py-10 text-center transition-all duration-200 ${
+            dragOver ? "scale-[1.01] border-accent-500 bg-accent-50" : "border-slate-300 bg-slate-50 hover:border-accent-300"
           }`}
         >
-          <UploadIcon className="text-3xl text-slate-500" />
+          <span className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-50 text-accent-700 transition-transform ${dragOver ? "-translate-y-1 scale-110" : ""}`}>
+            <UploadIcon className="text-2xl" />
+          </span>
           <p className="text-sm text-slate-700">Drag and drop a PDF here, or</p>
           <label htmlFor="protocol-file" className="btn-secondary cursor-pointer focus-within:ring-2 focus-within:ring-accent-600">
             Choose PDF file
@@ -154,7 +159,7 @@ export default function TrialUpload() {
               aria-valuenow={progress}
               className="h-2 w-full overflow-hidden rounded-full bg-slate-200"
             >
-              <div className="h-full rounded-full bg-accent-600 transition-all" style={{ width: `${progress}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-accent-500 to-violet-500 transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
         ) : null}

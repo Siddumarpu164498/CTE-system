@@ -1,0 +1,62 @@
+{
+  "label": "Synthetic patient I - heart study, recent MI and QTc 482 ms",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {
+      "age": 71,
+      "sex": "female"
+    },
+    "labs": [
+      {
+        "name": "Ejection fraction",
+        "value": 35,
+        "unit": "%",
+        "observed_at": "2026-09-12"
+      },
+      {
+        "name": "HbA1c",
+        "value": 6.8,
+        "unit": "%",
+        "observed_at": "2026-09-12"
+      },
+      {
+        "name": "QTcF",
+        "value": 482,
+        "unit": "ms",
+        "observed_at": "2026-09-12"
+      },
+      {
+        "name": "Potassium",
+        "value": 4.9,
+        "unit": "mmol/L",
+        "observed_at": "2026-09-12"
+      }
+    ],
+    "diagnoses": [
+      {
+        "name": "Heart failure",
+        "documented_at": "2023-06-30"
+      },
+      {
+        "name": "Myocardial infarction",
+        "documented_at": "2026-08-20"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Furosemide",
+        "start_date": "2023-07-01"
+      }
+    ],
+    "history": [
+      {
+        "condition": "Pregnancy",
+        "present": false
+      },
+      {
+        "condition": "Breastfeeding",
+        "present": false
+      }
+    ]
+  }
+}

@@ -19,7 +19,7 @@ export function EvidenceLinks({
           <button
             type="button"
             onClick={() => onOpen({ page: r.page, excerpt: r.excerpt, context })}
-            className="rounded border border-accent-200 bg-accent-50 px-2 py-0.5 text-xs font-semibold text-accent-800 hover:bg-accent-100"
+            className="rounded-full border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-800 transition-all hover:-translate-y-px hover:border-accent-300 hover:bg-accent-100 hover:shadow-sm"
             title={r.excerpt}
             aria-label={`Open protocol page ${r.page}${context ? ` evidence for ${context}` : ""}${r.source === "retrieval" ? " (retrieved passage)" : ""}`}
           >

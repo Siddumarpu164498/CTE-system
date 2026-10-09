@@ -65,7 +65,7 @@ export default function Analysis() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Eligibility analysis</h1>
+          <h1 className="page-title">Eligibility analysis</h1>
           <p className="break-all text-xs text-slate-600">Run {runId}</p>
           {status ? <p className="text-sm text-slate-600">Started {formatDateTime(status.created_at)}</p> : null}
         </div>

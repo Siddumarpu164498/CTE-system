@@ -1,0 +1,49 @@
+{
+  "label": "Synthetic patient J - heart study, LVEF missing and conflicting potassium",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {
+      "age": 55,
+      "sex": "male"
+    },
+    "labs": [
+      {
+        "name": "HbA1c",
+        "value": 8.9,
+        "unit": "%",
+        "observed_at": "2026-09-28"
+      },
+      {
+        "name": "QTc",
+        "value": 452,
+        "unit": "ms",
+        "observed_at": "2026-09-28"
+      },
+      {
+        "name": "Serum potassium",
+        "value": 4.2,
+        "unit": "mmol/L",
+        "observed_at": "2026-09-28"
+      },
+      {
+        "name": "Potassium",
+        "value": 5.8,
+        "unit": "mmol/L",
+        "observed_at": "2026-09-28"
+      }
+    ],
+    "diagnoses": [
+      {
+        "name": "Heart failure",
+        "documented_at": "2026-04-02"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Dapagliflozin",
+        "start_date": "2026-04-10"
+      }
+    ],
+    "history": []
+  }
+}

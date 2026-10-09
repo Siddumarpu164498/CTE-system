@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { analyze, errorMessage } from "../api/client";
 import type { PatientSummary, TrialSummary } from "../types";
 import { InlineError } from "./States";
+import { useToast } from "./Toast";
 
 /** Select trial (+ patient unless fixed) and start an eligibility run. */
 export function AssessmentLauncher({
@@ -17,6 +18,7 @@ export function AssessmentLauncher({
   idPrefix?: string;
 }) {
   const navigate = useNavigate();
+  const { notify } = useToast();
   const readyTrials = trials.filter((t) => t.status === "ready");
   const [trialId, setTrialId] = useState<string>(readyTrials[0]?.id ?? "");
   const [patientId, setPatientId] = useState<string>(fixedPatientId ?? patients?.[0]?.id ?? "");
@@ -34,6 +36,7 @@ export function AssessmentLauncher({
     setError(null);
     try {
       const run = await analyze({ trial_id: trialId, patient_id: pid });
+      notify("info", "Assessment started", "Six agents are analysing the patient against the protocol.");
       navigate(`/analysis/${run.run_id}`);
     } catch (err) {
       setError(errorMessage(err));
@@ -76,7 +79,7 @@ export function AssessmentLauncher({
         </div>
       )}
       <InlineError message={error} />
-      <button type="submit" className="btn-primary w-full sm:w-auto" disabled={busy || !trialId || !(fixedPatientId ?? patientId)}>
+      <button type="submit" className="btn-primary w-full py-2.5 sm:w-auto" disabled={busy || !trialId || !(fixedPatientId ?? patientId)}>
         {busy ? "Starting assessment…" : "Run assessment"}
       </button>
     </form>

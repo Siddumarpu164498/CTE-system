@@ -21,7 +21,7 @@ function IdList({ label, ids }: { label: string; ids: string[] }) {
 
 export function SilentExclusionCard({ trigger, onOpenEvidence }: { trigger: SilentExclusionTrigger; onOpenEvidence: (t: EvidenceTarget) => void }) {
   return (
-    <article className="rounded-lg border-2 border-amber-400 bg-white p-4" aria-labelledby={`set-${trigger.trigger_id}`}>
+    <article className="rounded-lg border-2 border-amber-400 bg-surface p-4" aria-labelledby={`set-${trigger.trigger_id}`}>
       <div className="flex flex-wrap items-center gap-2">
         <AlertTriangleIcon className="text-lg text-amber-700" />
         <h3 id={`set-${trigger.trigger_id}`} className="font-semibold text-slate-900">

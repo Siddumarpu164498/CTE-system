@@ -145,7 +145,7 @@ export default function PatientForm() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">{isEdit ? "Edit patient" : "New patient"}</h1>
+        <h1 className="page-title">{isEdit ? "Edit patient" : "New patient"}</h1>
         <p className="text-sm text-slate-600">
           {isEdit && current
             ? `Current version ${current.version} (versions: ${current.versions.join(", ")}). Saving creates a new version; past assessments keep the version they used.`

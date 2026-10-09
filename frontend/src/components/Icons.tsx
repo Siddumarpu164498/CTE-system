@@ -116,3 +116,73 @@ export const PlusIcon = (p: IconProps) => (
     <path d="M10 4v12M4 10h12" />
   </Base>
 );
+
+export const SunIcon = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="10" cy="10" r="3.2" />
+    <path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3L6 14M14 6l1.3-1.3" />
+  </Base>
+);
+
+export const MoonIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M16 12.2A6.5 6.5 0 017.8 4a6.5 6.5 0 108.2 8.2z" />
+  </Base>
+);
+
+export const MonitorIcon = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="2.5" y="3.5" width="15" height="10" rx="1.5" />
+    <path d="M7 17h6M10 13.5V17" />
+  </Base>
+);
+
+export const UsersIcon = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="7.5" cy="7" r="2.8" />
+    <path d="M2.5 16.5c.6-2.6 2.6-4 5-4s4.4 1.4 5 4" />
+    <path d="M13 4.6a2.8 2.8 0 010 5M14.8 12.8c1.3.6 2.3 1.8 2.7 3.7" />
+  </Base>
+);
+
+export const ActivityIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M2.5 10h3l2-5 3.5 10 2-5h4.5" />
+  </Base>
+);
+
+export const SparklesIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M8 3l1.4 3.6L13 8l-3.6 1.4L8 13l-1.4-3.6L3 8l3.6-1.4z" />
+    <path d="M14.5 12l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" />
+  </Base>
+);
+
+export const SearchIcon = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="8.8" cy="8.8" r="5.3" />
+    <path d="M12.8 12.8l4 4" />
+  </Base>
+);
+
+export const LogoutIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M8 4H5a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 005 16h3" />
+    <path d="M12.5 13.5L16 10l-3.5-3.5M16 10H8" />
+  </Base>
+);
+
+export const GridIcon = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="3" y="3" width="5.5" height="5.5" rx="1" />
+    <rect x="11.5" y="3" width="5.5" height="5.5" rx="1" />
+    <rect x="3" y="11.5" width="5.5" height="5.5" rx="1" />
+    <rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1" />
+  </Base>
+);
+
+export const ArrowRightIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 10h12M11.5 5.5L16 10l-4.5 4.5" />
+  </Base>
+);

@@ -5,7 +5,7 @@ import { AlertTriangleIcon } from "./Icons";
 
 function CriterionCard({ c }: { c: Criterion }) {
   return (
-    <li className={`rounded-md border p-3 ${c.requires_human_review ? "border-amber-400 bg-amber-50/60" : "border-slate-200 bg-white"}`}>
+    <li className={`rounded-md border p-3 ${c.requires_human_review ? "border-amber-400 bg-amber-50/60" : "border-slate-200 bg-surface"}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs font-semibold text-slate-800">{c.criterion_id}</span>
         <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">p. {c.source_page}</span>

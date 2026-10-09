@@ -4,6 +4,15 @@ import type { EvidenceTarget } from "./EvidencePanel";
 import { StatusBadge } from "./StatusBadge";
 import { humanize } from "../lib/format";
 
+// Left-edge color cue per status (the badge text remains the primary signal).
+const STRIPE: Record<string, string> = {
+  SATISFIED: "border-l-emerald-500",
+  NOT_TRIGGERED: "border-l-emerald-500",
+  UNSATISFIED: "border-l-red-500",
+  TRIGGERED: "border-l-red-500",
+  UNKNOWN: "border-l-amber-500",
+};
+
 function Reason({ e }: { e: CriterionEvaluation }) {
   return (
     <div className="space-y-1">
@@ -45,9 +54,10 @@ export function CriteriaTable({
   evaluations: CriterionEvaluation[];
   onOpenEvidence: (t: EvidenceTarget) => void;
 }) {
-  const headingId = `tbl-${title.replace(/\W+/g, "-").toLowerCase()}`;
+  const slug = title.replace(/\W+/g, "-").toLowerCase();
+  const headingId = `tbl-${slug}`;
   return (
-    <section aria-labelledby={headingId} className="card overflow-hidden">
+    <section id={slug} aria-labelledby={headingId} className="card scroll-mt-32 overflow-hidden">
       <div className="border-b border-slate-200 px-4 py-3">
         <h2 id={headingId} className="section-title">
           {title} <span className="text-sm font-normal text-slate-600">({evaluations.length})</span>
@@ -73,7 +83,7 @@ export function CriteriaTable({
               </thead>
               <tbody className="divide-y divide-slate-200 align-top">
                 {evaluations.map((e) => (
-                  <tr key={e.criterion_id}>
+                  <tr key={e.criterion_id} className={`border-l-4 transition-colors hover:bg-slate-50 ${STRIPE[e.status] ?? "border-l-transparent"}`}>
                     <th scope="row" className="px-4 py-3 font-mono text-xs font-semibold text-slate-800">{e.criterion_id}</th>
                     <td className="px-4 py-3"><StatusBadge status={e.status} /></td>
                     <td className="break-words px-4 py-3"><Rule e={e} /></td>
@@ -90,7 +100,7 @@ export function CriteriaTable({
           {/* Mobile: stacked cards */}
           <ul className="divide-y divide-slate-200 lg:hidden">
             {evaluations.map((e) => (
-              <li key={e.criterion_id} className="space-y-3 px-4 py-4 text-sm">
+              <li key={e.criterion_id} className={`space-y-3 border-l-4 px-4 py-4 text-sm ${STRIPE[e.status] ?? "border-l-transparent"}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-mono text-xs font-semibold text-slate-800">{e.criterion_id}</span>
                   <StatusBadge status={e.status} />
