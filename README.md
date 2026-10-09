@@ -10,7 +10,7 @@ patient profile, evaluates inclusion and exclusion criteria with six specialized
 
 | | |
 |---|---|
-| Live API | _add Render URL after deploy_ (e.g. `https://clinical-trial-eligibility-api.onrender.com/docs`) |
+| Live API | https://clinical-trial-eligibility-api.onrender.com/docs (Render free plan; first request after idle takes ~1 min) |
 | Live UI | _add Vercel URL after deploy_ |
 | Demo login (after seeding) | `demo@example.org` / `demo-password-123` |
 
