@@ -11,7 +11,7 @@ patient profile, evaluates inclusion and exclusion criteria with six specialized
 | | |
 |---|---|
 | Live API | https://clinical-trial-eligibility-api.onrender.com/docs (Render free plan; first request after idle takes ~1 min) |
-| Live UI | _add Vercel URL after deploy_ |
+| Live UI | https://clinical-trial-eligibility-app.onrender.com (Render static site) |
 | Demo login (after seeding) | `demo@example.org` / `demo-password-123` |
 
 ---
@@ -210,9 +210,10 @@ Coverage includes:
 
 ## Deploy
 
-**Backend → Render.** Push the repo, then in Render choose *New → Blueprint* and select `render.yaml`. It creates
-the Docker web service (`backend/Dockerfile`), a Postgres database, and a persistent disk for `/app/data`.
-Set `FRONTEND_ORIGIN` to the Vercel URL, and optionally `LLM_PROVIDER`/`LLM_API_KEY`. `JWT_SECRET` is generated.
+**Render (backend + frontend).** Push the repo, then in Render choose *New → Blueprint* and select `render.yaml`. It
+creates the Docker web service (`backend/Dockerfile`), the frontend static site (built with `VITE_API_URL` pointing at
+the API, with an SPA rewrite) and a Postgres database. `FRONTEND_ORIGIN` already allows the static site; optionally set
+`LLM_PROVIDER`/`LLM_API_KEY`. `JWT_SECRET` is generated.
 The blueprint uses Render's free plans: 512 MB RAM, no persistent disk, the service sleeps when idle (first request
 after a sleep takes about a minute) and free Postgres expires after 30 days. Embeddings are therefore off
 (`EMBEDDINGS_ENABLED=false`); the keyword retriever, all agents and page citations work unchanged (peak memory measured at
@@ -220,8 +221,9 @@ about 170 MB). For FAISS + MiniLM retrieval use the `standard` plan, set `EMBEDD
 `/app/data`. Seed the deployment
 with `python -m scripts.seed --api-url https://<render-host> --analyze`.
 
-**Frontend → Vercel.** Import the repo with root directory `frontend` (framework: Vite) and set
-`VITE_API_URL=https://<render-host>`. `frontend/vercel.json` provides the SPA rewrite.
+**Frontend → Vercel (alternative).** Import the repo with root directory `frontend` (framework: Vite) and set
+`VITE_API_URL=https://<render-host>`, then add the Vercel URL to `FRONTEND_ORIGIN` in `render.yaml`.
+`frontend/vercel.json` provides the SPA rewrite.
 
 ---
 

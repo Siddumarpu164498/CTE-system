@@ -1,4 +1,4 @@
-# Render Blueprint: backend web service + managed Postgres, on Render's free plans.
+# Render Blueprint: backend web service, frontend static site and managed Postgres, on Render's free plans.
 #
 # Free web services have 512 MB RAM and no persistent disk, so embeddings are off (the keyword
 # retriever is used; agents and page citations are unchanged) and retrieval indexes are rebuilt
@@ -21,8 +21,8 @@ services:
         fromDatabase:
           name: clinical-trial-eligibility-db
           property: connectionString
-      - key: FRONTEND_ORIGIN
-        sync: false           # set to the Vercel URL, e.g. https://your-app.vercel.app
+      - key: FRONTEND_ORIGIN    # comma-separated; add a Vercel URL here if you also deploy there
+        value: https://clinical-trial-eligibility-app.onrender.com,http://localhost:5173
       - key: LLM_PROVIDER
         value: none
       - key: LLM_API_KEY
@@ -31,6 +31,22 @@ services:
         value: "false"
       - key: DATA_DIR
         value: /app/data
+
+  - type: web
+    name: clinical-trial-eligibility-app
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://clinical-trial-eligibility-api.onrender.com
+      - key: NODE_VERSION
+        value: "20"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
 databases:
   - name: clinical-trial-eligibility-db
