@@ -213,8 +213,11 @@ Coverage includes:
 **Backend → Render.** Push the repo, then in Render choose *New → Blueprint* and select `render.yaml`. It creates
 the Docker web service (`backend/Dockerfile`), a Postgres database, and a persistent disk for `/app/data`.
 Set `FRONTEND_ORIGIN` to the Vercel URL, and optionally `LLM_PROVIDER`/`LLM_API_KEY`. `JWT_SECRET` is generated.
-Torch plus the embedding model need about 1 GB RAM, so the blueprint uses the `standard` plan. On a smaller plan, set
-`EMBEDDINGS_ENABLED=false`; the keyword retriever and all agents work unchanged. Seed the deployment
+The blueprint uses Render's free plans: 512 MB RAM, no persistent disk, the service sleeps when idle (first request
+after a sleep takes about a minute) and free Postgres expires after 30 days. Embeddings are therefore off
+(`EMBEDDINGS_ENABLED=false`); the keyword retriever, all agents and page citations work unchanged (peak memory measured at
+about 170 MB). For FAISS + MiniLM retrieval use the `standard` plan, set `EMBEDDINGS_ENABLED=true` and add a disk at
+`/app/data`. Seed the deployment
 with `python -m scripts.seed --api-url https://<render-host> --analyze`.
 
 **Frontend → Vercel.** Import the repo with root directory `frontend` (framework: Vite) and set

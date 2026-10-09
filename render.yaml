@@ -1,11 +1,16 @@
-# Render Blueprint: backend web service + managed Postgres.
+# Render Blueprint: backend web service + managed Postgres, on Render's free plans.
+#
+# Free web services have 512 MB RAM and no persistent disk, so embeddings are off (the keyword
+# retriever is used; agents and page citations are unchanged) and retrieval indexes are rebuilt
+# from protocol text stored in Postgres. For FAISS + MiniLM retrieval switch to `plan: standard`,
+# set EMBEDDINGS_ENABLED to "true" and add a disk mounted at /app/data.
 services:
   - type: web
     name: clinical-trial-eligibility-api
     runtime: docker
     rootDir: backend
     dockerfilePath: ./Dockerfile
-    plan: standard            # sentence-transformers + torch need ~1 GB RAM; on a 512 MB plan set EMBEDDINGS_ENABLED=false
+    plan: free
     healthCheckPath: /api/health
     envVars:
       - key: APP_ENV
@@ -23,14 +28,10 @@ services:
       - key: LLM_API_KEY
         sync: false
       - key: EMBEDDINGS_ENABLED
-        value: "true"
+        value: "false"
       - key: DATA_DIR
         value: /app/data
-    disk:
-      name: data
-      mountPath: /app/data
-      sizeGB: 1
 
 databases:
   - name: clinical-trial-eligibility-db
-    plan: basic-256mb
+    plan: free
