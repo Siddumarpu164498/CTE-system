@@ -185,3 +185,9 @@ def test_migrations_apply_cleanly(tmp_root, monkeypatch):
     } <= tables
     command.downgrade(cfg, "base")
     assert "users" not in set(inspect(create_engine(url)).get_table_names())
+
+
+def test_root_redirects_to_docs(client):
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code == 307
+    assert r.headers["location"] == "/docs"

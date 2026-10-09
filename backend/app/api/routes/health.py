@@ -1,10 +1,17 @@
 from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 
 from app.config import HUMAN_REVIEW_NOTICE, get_settings
 from app.database import SessionLocal
 
 router = APIRouter(tags=["health"])
+
+
+@router.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    """The backend is API-only; send browsers to the interactive docs."""
+    return RedirectResponse("/docs")
 
 
 @router.get("/api/health")
