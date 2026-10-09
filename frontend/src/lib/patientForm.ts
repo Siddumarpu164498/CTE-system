@@ -231,10 +231,65 @@ const PROFILE_KEYS = new Set(["demographics", "labs", "diagnoses", "medications"
 export interface JsonImport {
   label: string | null;
   profile: PatientProfileInput;
+  /** Fields that were present in the JSON but could not be used; shown to the user. */
+  ignored: string[];
+}
+
+// Common alternative spellings mapped onto the canonical PatientProfileInput fields.
+const ITEM_ALIASES: Record<string, Record<string, string[]>> = {
+  labs: {
+    name: ["name", "test", "lab", "analyte"],
+    value: ["value", "result"],
+    unit: ["unit", "units"],
+    observed_at: ["observed_at", "observed_on", "observation_date", "date", "collected_at", "collected_on"],
+    reference_range: ["reference_range", "ref_range", "range"],
+  },
+  diagnoses: {
+    name: ["name", "diagnosis", "condition", "problem"],
+    code: ["code", "icd10", "icd_10", "icd"],
+    documented_at: ["documented_at", "documented_on", "date", "diagnosed_at", "diagnosed_on", "onset_date"],
+  },
+  medications: {
+    name: ["name", "medication", "drug", "medicine"],
+    start_date: ["start_date", "started_at", "started_on", "start"],
+    stop_date: ["stop_date", "end_date", "stopped_at", "stopped_on", "stop", "end"],
+  },
+  history: {
+    condition: ["condition", "name", "diagnosis"],
+    present: ["present", "status", "value"],
+  },
+};
+
+const DEMOGRAPHIC_KEYS = new Set(["age", "sex", "date_of_birth"]);
+
+function normalizeItem(kind: string, item: unknown, index: number, ignored: string[]): Record<string, unknown> | null {
+  if (typeof item !== "object" || item === null || Array.isArray(item)) {
+    ignored.push(`${kind}[${index + 1}] (not an object)`);
+    return null;
+  }
+  const src = item as Record<string, unknown>;
+  const aliases = ITEM_ALIASES[kind] ?? {};
+  const out: Record<string, unknown> = {};
+  const used = new Set<string>();
+  for (const [field, names] of Object.entries(aliases)) {
+    for (const n of names) {
+      const v = src[n];
+      if (n in src) used.add(n);
+      if (out[field] === undefined && v !== undefined && v !== null && v !== "") out[field] = v;
+    }
+  }
+  if (kind === "history" && typeof out.present === "string") {
+    const v = out.present.trim().toLowerCase();
+    out.present = ["yes", "true", "present", "y"].includes(v) ? true : ["no", "false", "absent", "n"].includes(v) ? false : null;
+  }
+  for (const k of Object.keys(src)) if (!used.has(k)) ignored.push(`${kind}[${index + 1}].${k}`);
+  return out;
 }
 
 /**
- * Parse pasted JSON. Accepts either a PatientProfileInput or a {label, profile} wrapper.
+ * Parse pasted JSON. Accepts either a PatientProfileInput or a {label, profile} wrapper, and
+ * common alternative field names (e.g. "diagnosis" for a diagnosis name, "observed_on" for a lab
+ * date). Anything that cannot be used is listed in `ignored` instead of being dropped silently.
  * Throws an Error with a readable message on invalid input.
  */
 export function parseProfileJson(text: string): JsonImport {
@@ -255,20 +310,40 @@ export function parseProfileJson(text: string): JsonImport {
     if (typeof inner !== "object" || inner === null || Array.isArray(inner)) throw new Error("`profile` must be an object.");
     obj = inner as Record<string, unknown>;
   }
-  const unknown = Object.keys(obj).filter((k) => !PROFILE_KEYS.has(k));
-  if (unknown.length > 0) {
-    throw new Error(`Unknown field(s): ${unknown.join(", ")}. Allowed: ${Array.from(PROFILE_KEYS).join(", ")}.`);
-  }
+  const ignored: string[] = [];
+  if (typeof obj["label"] === "string" && label === null) label = obj["label"];
+  for (const k of Object.keys(obj)) if (!PROFILE_KEYS.has(k) && k !== "label") ignored.push(k);
   for (const k of ["labs", "diagnoses", "medications", "history"]) {
     if (k in obj && obj[k] !== null && !Array.isArray(obj[k])) throw new Error(`\`${k}\` must be an array.`);
   }
   if ("demographics" in obj && obj["demographics"] !== null && (typeof obj["demographics"] !== "object" || Array.isArray(obj["demographics"]))) {
     throw new Error("`demographics` must be an object.");
   }
-  const demo = obj["demographics"] as Record<string, unknown> | null | undefined;
-  const sex = demo?.["sex"];
-  if (sex !== undefined && sex !== null && !(SEXES as unknown[]).includes(sex)) {
+  const rawDemo = (obj["demographics"] ?? {}) as Record<string, unknown>;
+  const demographics: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rawDemo)) {
+    if (k === "label" && typeof v === "string") {
+      if (label === null) label = v;
+    } else if (DEMOGRAPHIC_KEYS.has(k)) {
+      if (v !== "" && v !== null) demographics[k] = v;
+    } else {
+      ignored.push(`demographics.${k}`);
+    }
+  }
+  if (typeof demographics.sex === "string") demographics.sex = demographics.sex.toLowerCase();
+  const sex = demographics["sex"];
+  if (sex !== undefined && !(SEXES as unknown[]).includes(sex)) {
     throw new Error(`demographics.sex must be one of: ${SEXES.join(", ")}.`);
   }
-  return { label, profile: obj as PatientProfileInput };
+  const lists: Record<string, unknown[]> = {};
+  for (const k of ["labs", "diagnoses", "medications", "history"]) {
+    const items = (obj[k] as unknown[] | null | undefined) ?? [];
+    lists[k] = items.map((it, i) => normalizeItem(k, it, i, ignored)).filter((x): x is Record<string, unknown> => x !== null);
+  }
+  const profile = {
+    ...(obj["as_of"] ? { as_of: obj["as_of"] } : {}),
+    demographics,
+    ...lists,
+  } as PatientProfileInput;
+  return { label, profile, ignored };
 }

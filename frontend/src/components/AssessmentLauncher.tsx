@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { analyze, errorMessage } from "../api/client";
 import type { PatientSummary, TrialSummary } from "../types";
 import { InlineError } from "./States";
@@ -60,7 +60,13 @@ export function AssessmentLauncher({
           ))}
         </select>
         {trials.length > 0 && readyTrials.length === 0 ? (
-          <p className="mt-1 text-xs text-amber-900">No trial is ready for analysis yet.</p>
+          <p className="mt-1 text-xs text-amber-900">
+            No trial is ready for analysis yet.
+            {trials.some((t) => t.status === "error")
+              ? " Protocols marked “error” had no recognisable inclusion or exclusion criteria. Upload a text-based PDF with clearly headed “Inclusion Criteria” and “Exclusion Criteria” sections, or configure an LLM provider for free-form protocols."
+              : " Protocols still processing will appear here when ready."}{" "}
+            <Link to="/trials/upload" className="link">Upload a protocol</Link>
+          </p>
         ) : null}
       </div>
       {fixedPatientId ? null : (

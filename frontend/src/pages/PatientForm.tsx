@@ -105,7 +105,12 @@ export default function PatientForm() {
     try {
       const parsed = parseProfileJson(jsonText);
       setForm(profileToForm(parsed.label ?? form.label, parsed.profile));
-      setJsonOk("Profile loaded into the form. Review the fields, then save.");
+      const { ignored } = parsed;
+      setJsonOk(
+        ignored.length > 0
+          ? `Profile loaded into the form. Not imported (unrecognised fields): ${ignored.join(", ")}. Review the fields, then save.`
+          : "Profile loaded into the form. Review the fields, then save.",
+      );
     } catch (e) {
       setJsonError(e instanceof Error ? e.message : "Could not parse JSON.");
     }
