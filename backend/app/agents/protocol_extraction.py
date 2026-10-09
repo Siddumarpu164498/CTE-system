@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 from pydantic import ValidationError
 
+from app.config import get_settings
 from app.engine.units import CANONICAL_UNITS, UNIT_PATTERN, normalize_unit
 from app.engine.vocabulary import AMBIGUOUS_QUALIFIERS, find_lab_in_text, normalize_text
 from app.rag.pdf_loader import PageText
@@ -24,9 +25,15 @@ from app.services.llm import UNTRUSTED_DATA_RULE, LLMClient, LLMError
 
 log = logging.getLogger(__name__)
 
+# "Inclusion Criteria", "5.1 Exclusion criteria:", "2. Illustrative Inclusion Criteria", "Key Exclusion Criteria"
 _HEADING = re.compile(
-    r"^\s*(?:\d+(?:\.\d+)*\.?\s+)?(inclusion|exclusion)\s+criteria\s*:?\s*$", re.IGNORECASE
+    r"^\s*(?:\d+(?:\.\d+)*\.?\s+)?(?:[a-z]+\s+){0,3}?(inclusion|exclusion)\s+criteria\s*:?\s*$", re.IGNORECASE
 )
+# A numbered, title-cased section heading ("4. Required Data for Screening") ends a criteria section.
+_SMALL_WORDS = {"and", "of", "for", "the", "to", "in", "on", "or", "a", "an", "with", "by", "at", "&", "/", "-"}
+_NUMBERED_HEADING = re.compile(r"^\s*(\d+)(?:\.\d+)*\.?\s+(\S.{2,70})$")
+# Upper-case criterion identifiers used in tables and lists: I-01, E-3, INC-01, EXC 2, IC1, EC12.
+_ITEM_ID = re.compile(r"^\s*((?:INC|EXC|IC|EC|I|E)(?:-|\s)?\d{1,3}[a-z]?)(?:[.:)]\s*|\s+|$)(.*)$")
 _END_HEADINGS = (
     "study design", "study procedures", "study treatment", "treatment plan", "statistical",
     "withdrawal", "concomitant", "assessments", "schedule of", "endpoints", "objectives",
@@ -86,6 +93,52 @@ def _is_end_heading(line: str) -> bool:
     return any(low.startswith(h) for h in _END_HEADINGS)
 
 
+def _numbered_section_heading(line: str) -> int | None:
+    """Section number if the line looks like a numbered, title-cased heading, else None."""
+    m = _NUMBERED_HEADING.match(line)
+    if not m:
+        return None
+    title = m.group(2).strip()
+    if title.endswith((".", ",", ";", ":")) or re.search(r"\d", title):
+        return None
+    words = title.split()
+    if len(words) < 2:
+        return None
+    if all(w[0].isupper() or w.lower() in _SMALL_WORDS for w in words):
+        return int(m.group(1))
+    return None
+
+
+@dataclass
+class _TableRow:
+    text: str
+    lines: list[str]  # every non-empty text line the row's cells contribute to the page text
+
+
+def _criteria_table_rows(page: PageText) -> dict[str, _TableRow]:
+    """Rows of criteria tables on a page, keyed by the normalized first line of the criterion cell.
+
+    A criteria table has a header row with a column named like "criterion"/"criteria"/
+    "description"/"eligibility". Only the criterion column becomes criterion text; ID and
+    commentary columns (e.g. "Prototype rule") are kept out of it.
+    """
+    rows: dict[str, _TableRow] = {}
+    for table in page.tables:
+        if len(table) < 2:
+            continue
+        header = [normalize_ws(c) for c in table[0]]
+        col = next((i for i, h in enumerate(header) if re.search(r"criteri|description|eligibility|requirement", h)), None)
+        if col is None:
+            continue
+        for row in table[1:]:
+            if col >= len(row) or not row[col].strip():
+                continue
+            cell_lines = [ln.strip() for c in row for ln in c.splitlines() if ln.strip()]
+            first = row[col].strip().splitlines()[0].strip()
+            rows[normalize_ws(first)] = _TableRow(text=re.sub(r"\s+", " ", row[col]).strip(), lines=cell_lines)
+    return rows
+
+
 def _boilerplate_lines(pages: list[PageText]) -> set[str]:
     """Running headers/footers: lines that repeat on several pages once digits are masked."""
     if len(pages) < 2:
@@ -100,11 +153,16 @@ def _boilerplate_lines(pages: list[PageText]) -> set[str]:
 
 
 def find_criteria_items(pages: list[PageText]) -> list[RawItem]:
-    """Walk pages line by line and collect list items under inclusion/exclusion headings."""
+    """Walk pages line by line and collect items under inclusion/exclusion headings.
+
+    Items are numbered or bulleted list entries, lines starting with a criterion ID (I-01, EXC-2),
+    or rows of a criteria table detected on the page (criterion column only).
+    """
     items: list[RawItem] = []
     boilerplate = _boilerplate_lines(pages)
     section: str | None = None
     current: RawItem | None = None
+    last_number: int | None = None
 
     def flush() -> None:
         nonlocal current
@@ -116,6 +174,11 @@ def find_criteria_items(pages: list[PageText]) -> list[RawItem]:
         current = None
 
     for page in pages:
+        table_rows = _criteria_table_rows(page)
+        skip: list[str] = []  # lines already covered by an emitted table row (header cells too)
+        for t in page.tables:
+            if t and any(re.search(r"criteri|description|eligibility|requirement", normalize_ws(c)) for c in t[0]):
+                skip.extend(ln.strip() for c in t[0] for ln in c.splitlines() if ln.strip())
         for raw_line in page.text.splitlines():
             line = raw_line.strip()
             if not line or _FOOTER.search(line) or re.sub(r"\d+", "#", line.lower()) in boilerplate:
@@ -124,6 +187,7 @@ def find_criteria_items(pages: list[PageText]) -> list[RawItem]:
             if heading:
                 flush()
                 section = heading.group(1).lower()
+                last_number = None
                 continue
             if section and _is_end_heading(line):
                 flush()
@@ -131,15 +195,35 @@ def find_criteria_items(pages: list[PageText]) -> list[RawItem]:
                 continue
             if not section:
                 continue
-            item = _ITEM.match(line)
-            if item:
+            row = table_rows.pop(normalize_ws(line), None)
+            if row is not None:
                 flush()
-                body = item.group(2).strip()
+                items.append(RawItem(category=section, page=page.page, text=row.text, excerpt=row.text))
+                rest = list(row.lines)
+                if line in rest:
+                    rest.remove(line)
+                skip.extend(rest)
+                continue
+            if line in skip:
+                skip.remove(line)
+                continue
+            number = _numbered_section_heading(line)
+            if number is not None and number != (last_number or 0) + 1:
+                flush()
+                section = None
+                continue
+            item = _ITEM.match(line)
+            id_item = None if item else _ITEM_ID.match(line)
+            if item or id_item:
+                flush()
+                if item and item.group(1):
+                    last_number = int(item.group(1))
+                body = (item.group(2) if item else id_item.group(2)).strip()  # type: ignore[union-attr]
                 current = RawItem(category=section, page=page.page, text=body, excerpt=body)
             elif current is not None:
                 current.text += " " + line
                 if page.page == current.page:
-                    current.excerpt += " " + line
+                    current.excerpt = (current.excerpt + " " + line).strip()
     flush()
     return items
 
@@ -208,16 +292,30 @@ def _parse_lab(t: str) -> ParsedRule | None:
         reasons.append("Threshold is relative to the upper limit of normal; patient reference range required.")
         return ParsedRule(None, [attribute], 0.5, reasons)
 
-    between = re.search(r"between\s*" + _NUM + r"\s*(?:and|to|-)\s*" + _NUM, tail)
+    window = re.search(r"(?:measured|obtained|collected|result|value)?\s*within\s*(?:the\s*)?(?:last\s*|past\s*)?" + _NUM + r"\s*(days?|weeks?|months?)", tail)
+    if window:
+        days = float(window.group(1)) * {"d": 1, "w": 7, "m": 30}[window.group(2)[0]]
+        stale_days = get_settings().stale_days
+        if days != stale_days:
+            reasons.append(
+                f"Protocol requires a result from the last {days:g} days; automatic staleness checks use {stale_days} days."
+            )
+
+    between = re.search(r"between\s*" + _NUM + r"\s*%?\s*(?:and|to|-)\s*" + _NUM, tail) or re.match(
+        r"\s*(?:(?:of|level|value|concentration)\s*)?:?\s*" + _NUM + r"\s*%?\s*(?:-|to)\s*" + _NUM, tail
+    )
     if between:
         unit = _unit_after(tail, between.end())
+        bounds = re.match(r"\s*\S*\s*\(?(inclusive|exclusive)\b", tail[between.end():])
+        inclusive: bool | None = {"inclusive": True, "exclusive": False}.get(bounds.group(1)) if bounds else None
+        if inclusive is None:
+            reasons.append("Range does not state whether the bounds are inclusive.")
         rule = NormalizedRule(
             attribute=attribute, operator="between", value=float(between.group(1)),
             value_max=float(between.group(2)), unit=unit or CANONICAL_UNITS.get(attribute),
-            inclusive=None,
+            inclusive=inclusive,
         )
-        reasons.append("Range does not state whether the bounds are inclusive.")
-        return ParsedRule(rule, [attribute], 0.75, reasons)
+        return ParsedRule(rule, [attribute], 0.9 if inclusive is not None else 0.75, reasons)
 
     best: tuple[int, str, re.Match] | None = None
     for op, phrases in _OPS:
@@ -247,15 +345,22 @@ def _parse_lab(t: str) -> ParsedRule | None:
 
 
 _CONDITION_PREFIXES = re.compile(
-    r"^(?:(?:a|any|known|documented|current|active|prior|previous|confirmed|clinical)\s+)*"
+    r"^(?:(?:a|any|known|documented|current|active|prior|previous|recent|confirmed|clinical)\s+)*"
     r"(?:history of|diagnosis of|presence of|evidence of|patients with|participants with|subjects with)?\s*",
 )
+
+
+# Digits that belong to a condition's name rather than to a threshold.
+_NAMED_NUMBERS = re.compile(r"\btype\s*[12]\b|\bcovid-19\b|\bhiv-?[12]\b")
 
 
 def _parse_condition(t: str) -> ParsedRule:
     body = t.rstrip(" .;")
     body = re.split(r",\s*(?:defined|as defined|including|e\.g\.|such as)\b", body)[0]
     body = _CONDITION_PREFIXES.sub("", body).strip()
+    body = re.sub(r"\s+(?:diagnosis|diagnosed)$", "", body)
+    # "... requiring urgent treatment" qualifies the condition; the concept is what precedes it.
+    body = re.split(r"\s+(?:requiring|that requires?|which requires?|needing)\b", body)[0]
     terms = [p.strip(" .;") for p in re.split(r"\s+(?:and/or|or)\s+|,\s*", body) if p.strip(" .;")]
     reasons: list[str] = []
     for q in AMBIGUOUS_QUALIFIERS:
@@ -282,16 +387,26 @@ def _parse_time_window(t: str) -> ParsedRule | None:
     return ParsedRule(rule, [f"event:{subject}"], 0.7, reasons)
 
 
+# "Missing or stale required laboratory result": a criterion about the data itself.
+_DATA_COMPLETENESS = re.compile(
+    r"\b(?:missing|stale|unavailable|incomplete|insufficient|outdated|undated)\b.*\b(?:laborator\w*|labs?|results?|data|values?|information)\b"
+)
+
+
 def parse_rule(text: str) -> ParsedRule:
     """Rule-based translation of one criterion's text into a NormalizedRule."""
     t = normalize_text(text)
     if any(marker in t for marker in _SEMANTIC_MARKERS):
         return ParsedRule(None, [], 0.4, ["Non-numeric criterion requires semantic evaluation."])
+    if _DATA_COMPLETENESS.search(t) and not find_lab_in_text(t):
+        # The labs it refers to are filled in from the protocol's other criteria (see extract_rule_based).
+        rule = NormalizedRule(attribute="data_completeness", operator="present", value=[])
+        return ParsedRule(rule, [], 0.8, [])
     for parser in (_parse_age, _parse_lab, _parse_time_window):
         parsed = parser(t)
         if parsed is not None:
             return parsed
-    if re.search(r"\d", t):
+    if re.search(r"\d", _NAMED_NUMBERS.sub("", t)):
         return ParsedRule(None, [], 0.4, ["Criterion contains numbers that could not be parsed into a rule."])
     return _parse_condition(t)
 
@@ -335,6 +450,21 @@ def _build_criterion(
     )
 
 
+def _link_data_completeness(criteria: list[Criterion]) -> list[Criterion]:
+    """Point data-completeness criteria at the lab values the protocol's other criteria require."""
+    labs = sorted({
+        c.normalized_rule.attribute for c in criteria
+        if c.normalized_rule and c.normalized_rule.attribute in CANONICAL_UNITS and c.normalized_rule.attribute != "age"
+    })
+    out = []
+    for c in criteria:
+        if c.normalized_rule and c.normalized_rule.attribute == "data_completeness":
+            rule = c.normalized_rule.model_copy(update={"value": labs})
+            c = c.model_copy(update={"normalized_rule": rule, "required_attributes": labs})
+        out.append(c)
+    return out
+
+
 def extract_rule_based(pages: list[PageText], trial_id: str) -> list[Criterion]:
     pages_by_no = {p.page: p.text for p in pages}
     counters = {"inclusion": 0, "exclusion": 0}
@@ -347,7 +477,7 @@ def extract_rule_based(pages: list[PageText], trial_id: str) -> list[Criterion]:
                 item.excerpt, pages_by_no, parse_rule(item.text), "rule_based",
             )
         )
-    return criteria
+    return _link_data_completeness(criteria)
 
 
 # --------------------------------------------------------------------------- LLM path

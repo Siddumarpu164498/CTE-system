@@ -213,6 +213,39 @@ def _evaluate_event(criterion: Criterion, profile: NormalizedProfile) -> RuleOut
                        f"Most relevant record of {subject} ({when}) is outside the {days}-day window.", [], rule.attribute)
 
 
+def _evaluate_data_completeness(criterion: Criterion, profile: NormalizedProfile) -> RuleOutcome:
+    """A protocol criterion about the data itself ("missing or stale required laboratory result").
+
+    It is never decided against the patient: incomplete data makes it UNKNOWN (more information
+    required), and complete, current data rules it out.
+    """
+    rule = criterion.normalized_rule
+    assert rule is not None
+    attrs = rule.value if isinstance(rule.value, list) else []
+    expected = "all required results present, current and unambiguous"
+    if not attrs:
+        return RuleOutcome(None, None, expected, "not_evaluable",
+                           "The protocol does not name which results are required; requires review by the study team.",
+                           ["Required results not specified."], "data_completeness")
+    problems, fine = [], []
+    for attr in attrs:
+        av = profile.attributes.get(attr)
+        if av is None or av.status == "missing" or av.value is None:
+            problems.append(f"{label(attr)} missing")
+        elif av.status != "ok":
+            problems.append(f"{label(attr)} {av.status}")
+        else:
+            fine.append(label(attr))
+    if problems:
+        summary = "; ".join(problems)
+        return RuleOutcome(None, summary, expected, "deterministic",
+                           f"Required data are incomplete ({summary}); eligibility cannot be assumed.",
+                           [f"Incomplete data: {summary}."], "data_completeness")
+    # Complete data satisfies an inclusion-style check and rules out an exclusion-style one.
+    return RuleOutcome(criterion.category == "inclusion", "all present and current", expected, "deterministic",
+                       f"All required results are present and current ({', '.join(fine)}).", [], "data_completeness")
+
+
 def _evaluate_semantic(criterion: Criterion, profile: NormalizedProfile, llm: LLMClient | None) -> RuleOutcome:
     expected = criterion.original_text
     if llm is None:
@@ -245,6 +278,8 @@ def evaluate_criterion(criterion: Criterion, profile: NormalizedProfile, llm: LL
     rule = criterion.normalized_rule
     if rule is None:
         return _evaluate_semantic(criterion, profile, llm)
+    if rule.attribute == "data_completeness":
+        return _evaluate_data_completeness(criterion, profile)
     if rule.attribute == "condition" and rule.operator in {"present", "absent"}:
         return _evaluate_condition(criterion, profile)
     if rule.operator == "within_days" and rule.attribute.startswith("event:"):

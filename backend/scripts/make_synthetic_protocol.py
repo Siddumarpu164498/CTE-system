@@ -6,14 +6,18 @@
 
 Writes the renal protocols used by the acceptance tests (protocol_renal.pdf,
 protocol_renal_defined.pdf) plus two demo protocols (protocol_hepatic.pdf,
-protocol_cardio.pdf). All content is synthetic. Run from backend/:  python -m scripts.make_synthetic_protocol
+protocol_cardio.pdf), and a single-page protocol whose criteria are laid out as ruled
+tables with criterion IDs (protocol_t2d_table.pdf). All content is synthetic. Run from backend/:  python -m scripts.make_synthetic_protocol
 """
 
 from pathlib import Path
 
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfgen import canvas
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 
@@ -136,12 +140,67 @@ def make_demo_protocol(path: Path, spec: dict) -> Path:
 
 DEMO_PROTOCOLS = {"protocol_hepatic.pdf": HEPATIC, "protocol_cardio.pdf": CARDIO}
 
+# Table layout: numbered sections with qualifier words in the headings, criteria in ruled
+# tables (ID / Criterion / Notes), wrapped cells, en-dash ranges and a data-completeness item.
+T2D_TABLE = {
+    "code": "SYN-T2D-004",
+    "title": "SYN-T2D-004: Synthetic Type 2 Diabetes Study (table layout)",
+    "inclusion": [
+        ("I-01", "Age 30–70 years inclusive", "Age within range on the assessment date"),
+        ("I-02", "Documented diagnosis of type 2 diabetes", "Diagnosis recorded in the patient record"),
+        ("I-03", "HbA1c 7.5%–10.5% inclusive, measured within 90 days before assessment", "Dated result required"),
+        ("I-04", "eGFR at least 45 mL/min/1.73m2", "Dated result required"),
+        ("I-05", "Potassium 3.5–5.0 mmol/L inclusive, measured within 30 days", "Dated result required"),
+    ],
+    "exclusion": [
+        ("E-01", "Known type 1 diabetes diagnosis", "Exclude if documented"),
+        ("E-02", "Pregnancy or breastfeeding", "Exclude if documented"),
+        ("E-03", "Recent acute medical instability requiring urgent treatment", "Refer for clinician review"),
+        ("E-04", "Missing or stale required laboratory result", "Report as insufficient information"),
+    ],
+}
+
+
+def make_table_protocol(path: Path, spec: dict) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    styles = getSampleStyleSheet()
+    cell = styles["BodyText"]
+
+    def table(rows: list[tuple[str, str, str]]) -> Table:
+        data = [["ID", "Criterion", "Notes"]] + [[i, Paragraph(c, cell), Paragraph(n, cell)] for i, c, n in rows]
+        t = Table(data, colWidths=[1.8 * cm, 9.2 * cm, 5.5 * cm])
+        t.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+        return t
+
+    story = [
+        Paragraph(spec["title"], styles["Title"]),
+        Paragraph("Synthetic document for software testing only. No real patient data.", cell),
+        Paragraph("1. Study Overview", styles["Heading2"]),
+        Paragraph("Adults with type 2 diabetes receiving a hypothetical oral therapy.", cell),
+        Paragraph("2. Key Inclusion Criteria", styles["Heading2"]),
+        table(spec["inclusion"]),
+        Spacer(1, 0.4 * cm),
+        Paragraph("3. Key Exclusion Criteria", styles["Heading2"]),
+        table(spec["exclusion"]),
+        Paragraph("4. Data Requirements for Screening", styles["Heading2"]),
+        Paragraph("Lab values need units and observation dates. Missing values are reported as missing.", cell),
+        Paragraph("5. Screening Outcomes", styles["Heading2"]),
+        Paragraph("Eligible, not eligible, or more information required.", cell),
+    ]
+    SimpleDocTemplate(str(path), pagesize=A4, title=spec["title"]).build(story)
+    return path
+
 
 def main() -> None:
     for name, defined in (("protocol_renal.pdf", False), ("protocol_renal_defined.pdf", True)):
         print("wrote", make_protocol(FIXTURES / name, defined))
     for name, spec in DEMO_PROTOCOLS.items():
         print("wrote", make_demo_protocol(FIXTURES / name, spec))
+    print("wrote", make_table_protocol(FIXTURES / "protocol_t2d_table.pdf", T2D_TABLE))
 
 
 if __name__ == "__main__":

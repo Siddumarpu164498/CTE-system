@@ -67,6 +67,7 @@ CONDITION_SYNONYMS: list[list[str]] = [
     ["hepatic impairment", "liver impairment", "liver dysfunction"],
     ["heart failure", "congestive heart failure", "chf"],
     ["type 2 diabetes mellitus", "type 2 diabetes", "t2dm", "diabetes mellitus type 2"],
+    ["type 1 diabetes mellitus", "type 1 diabetes", "t1dm", "diabetes mellitus type 1"],
     ["myocardial infarction", "heart attack", "mi"],
 ]
 
@@ -76,7 +77,7 @@ SEX_SPECIFIC_FEMALE_CONDITIONS = {"pregnancy", "breastfeeding"}
 # qualifiers that make a criterion ambiguous unless a numeric definition is given
 AMBIGUOUS_QUALIFIERS = [
     "adequate", "sufficient", "significant", "clinically significant", "appropriate", "normal",
-    "severe", "moderate", "mild", "uncontrolled", "acceptable", "reasonable", "poor",
+    "severe", "moderate", "mild", "uncontrolled", "acceptable", "reasonable", "poor", "recent",
 ]
 
 _ws = re.compile(r"\s+")
