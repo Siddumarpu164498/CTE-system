@@ -1,0 +1,37 @@
+# CPU-only PyTorch wheels (needed by sentence-transformers); keeps images small.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# API
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.0
+pydantic-settings==2.15.0
+email-validator==2.3.0
+python-multipart==0.0.32
+
+# Database
+SQLAlchemy==2.1.4
+alembic==1.20.0
+psycopg[binary]==3.3.6
+
+# Agents / orchestration / LLM
+langgraph==1.2.14
+langchain-core==1.6.9
+anthropic==1.12.1
+httpx==0.28.1
+
+# Documents and retrieval
+pymupdf==1.28.2
+numpy==2.5.3
+faiss-cpu==1.15.1
+torch==2.14.1+cpu
+sentence-transformers==6.1.0
+
+# Auth
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# Fixtures and tests
+reportlab==5.0.1
+pytest==9.1.1

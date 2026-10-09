@@ -1,0 +1,11 @@
+{
+  "label": "Synthetic patient C - eGFR not recorded",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {"age": 45, "sex": "male"},
+    "labs": [{"name": "HbA1c", "value": 7.6, "unit": "%", "observed_at": "2026-09-28"}],
+    "diagnoses": [{"name": "Type 2 diabetes mellitus", "documented_at": "2022-01-10"}],
+    "medications": [],
+    "history": [{"condition": "Severe renal impairment", "present": false}]
+  }
+}

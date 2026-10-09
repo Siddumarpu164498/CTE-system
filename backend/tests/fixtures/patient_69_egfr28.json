@@ -1,0 +1,14 @@
+{
+  "label": "Synthetic patient A - age 69, eGFR 28",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {"age": 69, "sex": "male"},
+    "labs": [
+      {"name": "eGFR", "value": 28, "unit": "mL/min/1.73m2", "observed_at": "2026-09-25"},
+      {"name": "HbA1c", "value": 8.1, "unit": "%", "observed_at": "2026-09-25"}
+    ],
+    "diagnoses": [{"name": "Type 2 diabetes mellitus", "code": "E11", "documented_at": "2019-03-14"}],
+    "medications": [{"name": "Metformin", "start_date": "2019-04-01"}],
+    "history": []
+  }
+}

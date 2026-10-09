@@ -1,0 +1,14 @@
+{
+  "label": "Synthetic patient D - conflicting eGFR values",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {"age": 61, "sex": "male"},
+    "labs": [
+      {"name": "eGFR", "value": 34, "unit": "mL/min/1.73m2", "observed_at": "2026-09-27"},
+      {"name": "egfr", "value": 26, "unit": "mL/min/1.73m2", "observed_at": "2026-09-27"}
+    ],
+    "diagnoses": [{"name": "Type 2 diabetes mellitus", "documented_at": "2020-08-19"}],
+    "medications": [],
+    "history": [{"condition": "Severe renal impairment", "present": false}]
+  }
+}

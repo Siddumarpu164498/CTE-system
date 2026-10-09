@@ -1,0 +1,18 @@
+{
+  "label": "Synthetic patient B - all criteria met",
+  "profile": {
+    "as_of": "2026-10-01",
+    "demographics": {"age": 52, "sex": "female"},
+    "labs": [
+      {"name": "Estimated GFR", "value": 78, "unit": "mL/min/1.73m2", "observed_at": "2026-09-20"},
+      {"name": "Serum creatinine", "value": 80, "unit": "µmol/L", "observed_at": "2026-09-20"}
+    ],
+    "diagnoses": [{"name": "Type 2 diabetes mellitus", "code": "E11", "documented_at": "2021-06-02"}],
+    "medications": [{"name": "Metformin", "start_date": "2021-06-10"}],
+    "history": [
+      {"condition": "Severe renal impairment", "present": false},
+      {"condition": "Pregnancy", "present": false},
+      {"condition": "Breastfeeding", "present": false}
+    ]
+  }
+}
